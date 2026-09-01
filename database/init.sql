@@ -1,0 +1,81 @@
+CREATE DATABASE IF NOT EXISTS canarypilot;
+USE canarypilot;
+
+CREATE TABLE IF NOT EXISTS applications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(255),
+    repository VARCHAR(255),
+    current_version VARCHAR(50),
+    stable_version VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS deployments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    application_id INT NOT NULL,
+    version VARCHAR(50) NOT NULL,
+    canary_percentage INT DEFAULT 0,
+    status VARCHAR(30) DEFAULT 'PENDING',
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    CONSTRAINT fk_deployment_application
+        FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS monitoring_metrics (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    application_id INT NOT NULL,
+    cpu_usage DECIMAL(5,2) DEFAULT 0,
+    memory_usage DECIMAL(5,2) DEFAULT 0,
+    error_rate DECIMAL(5,2) DEFAULT 0,
+    response_time DECIMAL(8,2) DEFAULT 0,
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_metric_application
+        FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS incidents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    application_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    severity VARCHAR(20) DEFAULT 'MEDIUM',
+    status VARCHAR(30) DEFAULT 'OPEN',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL,
+    CONSTRAINT fk_incident_application
+        FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS rollback_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    deployment_id INT NOT NULL,
+    previous_version VARCHAR(50),
+    reason VARCHAR(255),
+    rolled_back_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_rollback_deployment
+        FOREIGN KEY (deployment_id) REFERENCES deployments(id) ON DELETE CASCADE
+);
+
+INSERT INTO applications
+(name, description, repository, current_version, stable_version)
+VALUES
+(
+    'Payment API',
+    'Reference application managed by CanaryPilot',
+    'https://github.com/your-org/payment-api',
+    'v2.1.0',
+    'v2.0.4'
+)
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+INSERT INTO deployments
+(application_id, version, canary_percentage, status)
+SELECT id, 'v2.1.0', 25, 'RUNNING'
+FROM applications
+WHERE name = 'Payment API'
+AND NOT EXISTS (
+    SELECT 1 FROM deployments
+    WHERE application_id = applications.id AND version = 'v2.1.0'
+);

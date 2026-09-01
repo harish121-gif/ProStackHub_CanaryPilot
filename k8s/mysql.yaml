@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canarypilot-db
+  namespace: canarypilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canarypilot-db
+  template:
+    metadata:
+      labels:
+        app: canarypilot-db
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: canarypilot-db-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: canarypilot
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD --silent"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: canarypilot-mysql-pvc
+        - name: init
+          configMap:
+            name: canarypilot-db-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: canarypilot
+spec:
+  selector:
+    app: canarypilot-db
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306

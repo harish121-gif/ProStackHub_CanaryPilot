@@ -1,0 +1,47 @@
+backend:
+  image:
+    repository: canarypilot-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  stableReplicas: 3
+  canaryReplicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minStable: 1
+    maxStable: 6
+    minCanary: 0
+    maxCanary: 4
+    cpuTarget: 70
+
+frontend:
+  image:
+    repository: canarypilot-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+database:
+  image: mysql:8.4
+  rootPassword: root1234
+  storage: 1Gi
+
+gateway:
+  image: nginx:alpine
+  nodePort: 30080
+
+monitoring:
+  enabled: true

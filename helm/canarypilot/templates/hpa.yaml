@@ -1,0 +1,39 @@
+{{- if .Values.backend.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "canarypilot.name" . }}-backend-stable-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "canarypilot.name" . }}-backend-stable
+  minReplicas: {{ .Values.backend.hpa.minStable }}
+  maxReplicas: {{ .Values.backend.hpa.maxStable }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.backend.hpa.cpuTarget }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "canarypilot.name" . }}-backend-canary-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "canarypilot.name" . }}-backend-canary
+  minReplicas: {{ .Values.backend.hpa.minCanary }}
+  maxReplicas: {{ .Values.backend.hpa.maxCanary }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.backend.hpa.cpuTarget }}
+{{- end }}

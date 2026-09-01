@@ -1,0 +1,46 @@
+name: CanaryPilot Manual Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Previous image tag, for example sha-1234567"
+        required: true
+      backend:
+        description: "Rollback backend image"
+        required: true
+        default: "true"
+      frontend:
+        description: "Rollback frontend image"
+        required: true
+        default: "true"
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker Hub login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull previous backend image
+        if: inputs.backend == 'true'
+        run: docker pull "${{ secrets.DOCKERHUB_USERNAME }}/canarypilot-backend:${{ inputs.image_tag }}"
+
+      - name: Pull previous frontend image
+        if: inputs.frontend == 'true'
+        run: docker pull "${{ secrets.DOCKERHUB_USERNAME }}/canarypilot-frontend:${{ inputs.image_tag }}"
+
+      - name: Rollback instructions
+        run: |
+          echo "Previous images pulled successfully."
+          echo "For local Compose rollback, use scripts/rollback-compose.ps1 with this image tag."
+          echo "For Kubernetes, update Helm image.tag and run helm upgrade --install."

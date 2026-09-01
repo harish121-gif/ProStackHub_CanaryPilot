@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: canarypilot
+  labels:
+    app: canarypilot-backend
+spec:
+  selector:
+    app: canarypilot-backend
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

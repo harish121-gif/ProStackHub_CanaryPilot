@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: canarypilot-backend
+  namespace: canarypilot
+  labels:
+    app: canarypilot
+spec:
+  selector:
+    matchLabels:
+      app: canarypilot-backend
+  namespaceSelector:
+    matchNames:
+      - canarypilot
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 5s

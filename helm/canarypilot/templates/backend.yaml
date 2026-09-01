@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canarypilot.name" . }}-backend-stable
+  labels:
+    app: {{ include "canarypilot.name" . }}-backend
+    release-track: stable
+spec:
+  replicas: {{ .Values.backend.stableReplicas }}
+  selector:
+    matchLabels:
+      app: {{ include "canarypilot.name" . }}-backend
+      release-track: stable
+  template:
+    metadata:
+      labels:
+        app: {{ include "canarypilot.name" . }}-backend
+        release-track: stable
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: db
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: canarypilot
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "canarypilot.name" . }}-db-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "canarypilot.name" . }}-db-secret
+                  key: DB_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+{{ toYaml .Values.backend.resources | indent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canarypilot.name" . }}-backend-canary
+  labels:
+    app: {{ include "canarypilot.name" . }}-backend
+    release-track: canary
+spec:
+  replicas: {{ .Values.backend.canaryReplicas }}
+  selector:
+    matchLabels:
+      app: {{ include "canarypilot.name" . }}-backend
+      release-track: canary
+  template:
+    metadata:
+      labels:
+        app: {{ include "canarypilot.name" . }}-backend
+        release-track: canary
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: db
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: canarypilot
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "canarypilot.name" . }}-db-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "canarypilot.name" . }}-db-secret
+                  key: DB_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+{{ toYaml .Values.backend.resources | indent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: {{ include "canarypilot.name" . }}-backend
+spec:
+  selector:
+    app: {{ include "canarypilot.name" . }}-backend
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

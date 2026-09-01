@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "canarypilot.name" . }}-db-secret
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: {{ .Values.database.rootPassword | quote }}
+  DB_USER: root
+  DB_PASSWORD: {{ .Values.database.rootPassword | quote }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "canarypilot.name" . }}-mysql-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.database.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canarypilot.name" . }}-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "canarypilot.name" . }}-db
+  template:
+    metadata:
+      labels:
+        app: {{ include "canarypilot.name" . }}-db
+    spec:
+      containers:
+        - name: mysql
+          image: {{ .Values.database.image }}
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "canarypilot.name" . }}-db-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: canarypilot
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD --silent"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "canarypilot.name" . }}-mysql-pvc
+        - name: init
+          configMap:
+            name: {{ include "canarypilot.name" . }}-db-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  selector:
+    app: {{ include "canarypilot.name" . }}-db
+  ports:
+    - port: 3306
+      targetPort: 3306

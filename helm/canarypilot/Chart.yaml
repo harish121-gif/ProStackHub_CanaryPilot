@@ -1,0 +1,6 @@
+apiVersion: v2
+name: canarypilot
+description: CanaryPilot application and progressive delivery stack
+version: 0.1.0
+appVersion: "1.0.0"
+type: application

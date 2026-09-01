@@ -1,6 +1,6 @@
 # CanaryPilot
 
-[![CanaryPilot CI/CD Workflow](https://github.com/YOUR_GITHUB_USERNAME/ProStackHub_CanaryPilot/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/ProStackHub_CanaryPilot/actions/workflows/ci.yml)
+[![CanaryPilot CI/CD Workflow](https://github.com/harish121/ProStackHub_CanaryPilot/actions/workflows/ci.yml/badge.svg)](https://github.com/harish121/ProStackHub_CanaryPilot/actions/workflows/ci.yml)
 
 ## Smart Canary Deployment and Application Monitoring Platform
 

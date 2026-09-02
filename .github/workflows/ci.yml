@@ -91,7 +91,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          push: ${{ steps.docker_login.outcome == 'success' }}
+          push: false
           tags: ${{ steps.backend_meta.outputs.tags }}
           labels: ${{ steps.backend_meta.outputs.labels }}
 
@@ -108,7 +108,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
-          push: ${{ steps.docker_login.outcome == 'success' }}
+          push: false
           tags: ${{ steps.frontend_meta.outputs.tags }}
           labels: ${{ steps.frontend_meta.outputs.labels }}
 

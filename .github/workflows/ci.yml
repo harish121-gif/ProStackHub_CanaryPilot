@@ -82,7 +82,7 @@ jobs:
         id: backend_meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME || 'canarypilot' }}/canarypilot-backend
+          images: canarypilot/canarypilot-backend
           tags: |
             type=sha
             type=raw,value=latest
@@ -99,7 +99,7 @@ jobs:
         id: frontend_meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME || 'canarypilot' }}/canarypilot-frontend
+          images: canarypilot/canarypilot-frontend
           tags: |
             type=sha
             type=raw,value=latest
